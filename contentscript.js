@@ -22,7 +22,7 @@ var wikiSpoiler = function() {
   function findHeadline( headlineText ) {
     var headlines = target.getElementsByClassName('mw-headline')
     for (var i = 0; i < headlines.length; i++) {
-      if (headlines[i].innerText == headlineText) {
+      if (new RegExp("^" + headlineText , "i").test( headlines[i].innerText )) {
         return headlines[i]
       }
     }
@@ -70,62 +70,70 @@ var wikiSpoiler = function() {
       getLinks[i].style.color = col //document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "").getPropertyValue("color")
     }
   }
-  if ( wikiPageIsAFilm() == true) {
-    var plotHeadline = findHeadline('Plot'),
-        moviePage = document.getElementById("firstHeading").getElementsByTagName("span")[0].innerText,
-        movieName = moviePage.replace(/\s+\(.*\)/,''),
-        movieYearInPageName = moviePage.match(/\(([0-9]{4}) .*\)/i),
-        queryMovie = movieName + " " + (movieYearInPageName ? movieYearInPageName : "") + " ending",
-        videoFeed = getYouTubeFeed(queryMovie),
-        thirdedView = Math.floor(plotHeadline.parentNode.clientWidth / 3) - 20
-    //Friday the 13th (1980 film)
-    if (plotHeadline) {
-        
-      var parentPlotNode = plotHeadline.parentNode,
-          sibl = parentPlotNode.nextElementSibling,
-          para,
-          addSheet = document.createElement("style"),
-          videosDiv = document.createElement("div"),
+  var plotHeadline = findHeadline('Plot')
+
+  if ( wikiPageIsAFilm() && plotHeadline != null) {
+    
+    var moviePageEle = document.getElementById("firstHeading").getElementsByTagName("span"),
+        moviePage
           
-      addSheet.innerHTML = "p.spoiler, p.spoiler > a { background-color: black; color: black; }\np.spoiler:hover { background-color: white; color: black; }"
-      target.body.appendChild(addSheet)
-      
-      while ( sibl && sibl.tagName.toString() != parentPlotNode.tagName.toString()) {
-        if (sibl.tagName == "P") {
-          para = sibl
-        }
-        sibl = sibl.nextElementSibling
-      }
-      if (para) {
-        para.className += " spoiler"
-        para.onmouseover = changeLinkColor( para, document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "").getPropertyValue("color"), "white")
-
-        para.onmouseout = changeLinkColor( para, "black", "black")
-
-
-        videosDiv.style.width = (plotHeadline.parentNode.clientWidth - 0) + "px"
-
-        addSheet.innerHTML += "\ndiv.ytvids { float:left; width:"+Math.floor(plotHeadline.parentNode.parentNode.clientWidth / 3) + "px }\ndiv > iframe { padding:10px }"
-        
-        // add <br> to clear page to next line. otherwise the next <h2> spazzes out
-        //videos.innerHTML = "<div class='ytvids' id='video_1'>hi</div><div class='ytvids' id='video_2'>there</div><div class='ytvids' id='video_3'>mah peeps</div><br style='clear:both'>"
-
-        
-        /*vidIframe.setAttribute("width", thirdedView)
-        vidIframe.setAttribute("height", Math.floor(thirdedView / (560/315.0)))
-        vidIframe.setAttribute("frameborder", 0)
-        vidIframe.setAttribute("src", "https://www.youtube.com/embed/4G1xO_B2V7s")*/
-        for ( var i = 0; i < videoFeed.feed.entry.length; i++)
-        {
-          var videoId = videoFeed.feed.entry[i].id["$t"].match(":video:(.*)")[1]
-          videosDiv.appendChild(generateYouTubeVideo( videoId, thirdedView))
-          // <iframe width="560" height="315" src="https://www.youtube.com/embed/4G1xO_B2V7s" frameborder="0" allowfullscreen></iframe>
+        for (var i = 0 ; i < moviePageEle.length; i++) {
+          if (moviePageEle[i].getAttribute("class") != "editsection") {
+            moviePage = moviePageEle[i].innerText
+          }
         }
 
-        videosDiv.appendChild(document.createElement("div"))
-        target.getElementById("mw-content-text").insertBefore( videosDiv, sibl ) 
+    var movieName = moviePage.replace(/\s+\(.*\)/,''), //Friday the 13th (1980 film)
+        movieYearInPageName = moviePage.match(/\(([0-9]{4}) .*\)/i),
+        queryMovie = movieName + (movieYearInPageName ? (" " + movieYearInPageName) : "") + " ending",
+        videoFeed = getYouTubeFeed(queryMovie),
+        thirdedView = Math.floor(plotHeadline.parentNode.clientWidth / 3) - 20,
+        parentPlotNode = plotHeadline.parentNode,
+        sibl = parentPlotNode.nextElementSibling,
+        para,
+        addSheet = document.createElement("style"),
+        videosDiv = document.createElement("div")
+    
+    console.log(queryMovie)
+    addSheet.innerHTML = "p.spoiler, p.spoiler > a { background-color: black; color: black; }\np.spoiler:hover { background-color: white; color: black; }"
+    target.body.appendChild(addSheet)
+    
+    while ( sibl && sibl.tagName.toString() != parentPlotNode.tagName.toString()) {
+      if (sibl.tagName == "P") {
+        para = sibl
       }
+      sibl = sibl.nextElementSibling
     }
+    if (para) {
+      para.className += " spoiler"
+      para.onmouseover = changeLinkColor( para, document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "").getPropertyValue("color"), "white")
+
+      para.onmouseout = changeLinkColor( para, "black", "black")
+
+
+      videosDiv.style.width = (plotHeadline.parentNode.clientWidth - 0) + "px"
+
+      addSheet.innerHTML += "\ndiv.ytvids { float:left; width:"+Math.floor(plotHeadline.parentNode.parentNode.clientWidth / 3) + "px }\ndiv > iframe { padding:10px }"
+      
+      // add <br> to clear page to next line. otherwise the next <h2> spazzes out
+      //videos.innerHTML = "<div class='ytvids' id='video_1'>hi</div><div class='ytvids' id='video_2'>there</div><div class='ytvids' id='video_3'>mah peeps</div><br style='clear:both'>"
+
+      
+      /*vidIframe.setAttribute("width", thirdedView)
+      vidIframe.setAttribute("height", Math.floor(thirdedView / (560/315.0)))
+      vidIframe.setAttribute("frameborder", 0)
+      vidIframe.setAttribute("src", "https://www.youtube.com/embed/4G1xO_B2V7s")*/
+      for ( var i = 0; i < videoFeed.feed.entry.length; i++)
+      {
+        var videoId = videoFeed.feed.entry[i].id["$t"].match(":video:(.*)")[1]
+        videosDiv.appendChild(generateYouTubeVideo( videoId, thirdedView))
+        // <iframe width="560" height="315" src="https://www.youtube.com/embed/4G1xO_B2V7s" frameborder="0" allowfullscreen></iframe>
+      }
+
+      videosDiv.appendChild(document.createElement("div"))
+      target.getElementById("mw-content-text").insertBefore( videosDiv, sibl ) 
+    }
+    
   } 
    
 }()
