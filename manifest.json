@@ -1,7 +1,7 @@
 {
-  "name": "WikiSpoiler!",
+  "name": "Spoilerpedia",
   "version": "0.1.0",
-  "description": "Spoilers the last paragraph of any Wikipedia movies",
+  "description": "Spoilers the last paragraph of any movies on Wikipedia, then loads the 3 most relevant videos related to the ending of the movie",
   "icons": { 
     "16": "icon.png",
     "48": "icon.png",
@@ -16,11 +16,11 @@
     "https://*.wikipedia.org/*"
   ],
   "content_scripts": [
-	  {
-	  	"matches": ["http://*/*","https://*/*"],
-	  	"js": ["contentscript.js"],
-	  	"runat": "document_end",
+		{
+			"matches": ["http://*/*","https://*/*"],
+			"js": ["contentscript.js"],
+			"runat": "document_end",
       "all_frames" : false
-	  }
+		}
   ]
 }
