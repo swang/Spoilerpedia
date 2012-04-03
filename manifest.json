@@ -24,7 +24,7 @@
   ],
   "page_action": {
     "default_icon": "logo-32.png", // optional
-    "default_title": "Spoiler this page"    // optional; shown in tooltip
+    "default_title": "Disable Spoilerpedia on this page"
   }
 
 }

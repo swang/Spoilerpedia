@@ -29,7 +29,7 @@ spoilerpedia.youtube = function() {
         }
       }
       xhr.send()
-      return resp
+      return resp.feed
     }
     
   }
@@ -37,12 +37,15 @@ spoilerpedia.youtube = function() {
 }()
 
 spoilerpedia.detectWiki = function() {
-  var target = arguments.length == 0 ? document : arguments[0],
-      lastLinkBackground = "",
-      lastLinkColor = ""        
+  var target = arguments.length == 0 ? document : arguments[0]
 
   return {
-        
+    /* 
+     * function wikiPageIsAFilm
+     * Determines whether or not the current page on Wikipedia is one about film.
+     * Generally any page about a film will include the category '<Year> Film' so
+     * we will search for that in its list of categories.
+     */
     wikiPageIsAFilm: function() {
 
       var matchYearFilm = /[0-9]{4} Films/i,
@@ -58,6 +61,10 @@ spoilerpedia.detectWiki = function() {
       return isFilm
     },
 
+    /*
+     * function findHeadline
+     * Finds a headline in Wikipedia that matches `headlineText`
+     */
     findHeadline: function(headlineText) {
       var headlines = target.getElementsByClassName('mw-headline')
       for (var i = 0; i < headlines.length; i++) {
@@ -69,7 +76,7 @@ spoilerpedia.detectWiki = function() {
     },
     
     /*
-     * function changeLinkColor:
+     * function changeLinkColor
      * changes the color of all links in 'node' to col/bgcol
      */
     changeLinkColor: function(node, col, bgcol)  {
@@ -81,6 +88,90 @@ spoilerpedia.detectWiki = function() {
       }
     },
 
+    /*
+     * function getLastParagraph
+     * returns the last paragraph under the plot heading
+     */
+    getLastParagraph: function(plotHeadline) {
+      var parentPlotNode = plotHeadline.parentNode,
+          sibl = parentPlotNode.nextElementSibling,
+          para
+      while ( sibl && sibl.tagName.toString() != parentPlotNode.tagName.toString()) {
+        if (sibl.tagName == "P") {
+          para = sibl
+        }
+        sibl = sibl.nextElementSibling
+      }
+      return para
+    },
+
+    /*
+     * function applySpoiler
+     * adds a blackbar across the last paragraph under Plot heading
+     */
+    applySpoiler: function(paragraph) {
+      if (paragraph) {
+        var linkStyle = document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "")
+        paragraph.className += " spoiler"
+        paragraph.onmouseover  = function() { spoilerpedia.detectWiki.changeLinkColor(paragraph, linkStyle.getPropertyValue("color"), linkStyle.getPropertyValue("background-color")) }
+        paragraph.onmouseout   = function() { spoilerpedia.detectWiki.changeLinkColor(paragraph, "black", "black") }
+      }
+    },
+
+    /*
+     * function getSheet
+     * returns <style> that contains styles for spoilerpedia, or if it does not
+     * exist, one is created and returned.
+     */
+    getSheet: function() {
+      var styleSheet = document.querySelector("style#spoilerpedia-css")
+      if (!styleSheet) {
+        styleSheet = document.createElement("style")
+        styleSheet.id = "spoilerpedia-css"
+      }
+      return styleSheet
+    },
+
+    /* function getMovie
+     * returns the Wikipedic title of current Page
+     * trick is spans inside the heading change if user is logged in vs logged out.
+     */
+    getTitle: function() {
+      var getSpans = document.getElementById("firstHeading").getElementsByTagName("span"),
+          moviePage
+      for (var i = 0 ; i < getSpans.length; i++) {
+        if (getSpans[i].getAttribute("class") != "editsection") {
+          moviePage = getSpans[i].innerText
+        }
+      }
+      return moviePage
+    },
+
+    /* 
+     * function addVideos
+     * adds 3 videos at the bottom of the Plot paragraph with the top 3 relevant
+     * YouTube videos for that movie's ending
+     */
+    addVideos: function(moviePage) {
+      var videosDiv = document.createElement("div"),
+          videoDivWidth = this.findHeadline('Plot').parentNode.clientWidth,
+          movieName = moviePage.replace(/\s+\(.*\)/,''), // returns title of page w/out disambig 
+          movieYearInPageName = moviePage.match(/\(([0-9]{4}) .*\)/i), // grabs the year if it exists in disambig
+          
+          queryMovie = movieName + (movieYearInPageName && movieYearInPageName.length >= 2 ? (" " + movieYearInPageName[1]) : "") + " ending",
+          videoFeed = spoilerpedia.youtube.getYouTubeFeed(queryMovie) // grabs the YouTube feed
+          
+      videosDiv.id = "spoilerpedia-videos"
+      
+      videosDiv.style.width =  videoDivWidth + "px"
+      for ( var i = 0; i < videoFeed.entry.length; i++)
+      {
+        var videoId = videoFeed.entry[i].id["$t"].match(":video:(.*)")[1]
+        videosDiv.appendChild(spoilerpedia.youtube.generateYouTubeVideo( videoId, Math.floor(videoDivWidth / 3) - 20))
+        // <iframe width="560" height="315" src="https://www.youtube.com/embed/4G1xO_B2V7s" frameborder="0" allowfullscreen></iframe>
+      }
+      return videosDiv
+    },
     init: function() {
       var plotHeadline = this.findHeadline('Plot')
 
@@ -88,61 +179,23 @@ spoilerpedia.detectWiki = function() {
         
         chrome.extension.sendRequest({"showSpoilerpediaIcon":true}, function response() {})
 
-        var moviePageEle = document.getElementById("firstHeading").getElementsByTagName("span"),
-            moviePage
-              
-            for (var i = 0 ; i < moviePageEle.length; i++) {
-              if (moviePageEle[i].getAttribute("class") != "editsection") {
-                moviePage = moviePageEle[i].innerText
-              }
-            }
+        var moviePage = this.getTitle(),
+            para = this.getLastParagraph(plotHeadline)
+        
+        target.body.appendChild( this.getSheet() )
 
-        var movieName = moviePage.replace(/\s+\(.*\)/,''), // returns title of page w/out disambig 
-            movieYearInPageName = moviePage.match(/\(([0-9]{4}) .*\)/i), // grabs the year if it exists in disambig
-            queryMovie = movieName + (movieYearInPageName ? (" " + movieYearInPageName) : "") + " ending",
-            videoFeed = spoilerpedia.youtube.getYouTubeFeed(queryMovie), // grabs the YouTube feed
-            videoWidth = Math.floor(plotHeadline.parentNode.clientWidth / 3),
-            parentPlotNode = plotHeadline.parentNode,
-            sibl = parentPlotNode.nextElementSibling,
-            addSheet = document.createElement("style"),
-            videosDiv = document.createElement("div"),
-            para;
-        
-        //console.log(queryMovie)
-        addSheet.innerHTML = "p.spoiler, p.spoiler > a { background-color: black; color: black; }\np.spoiler:hover { background-color: white; color: black; }"
-        target.body.appendChild(addSheet)
-        
-        while ( sibl && sibl.tagName.toString() != parentPlotNode.tagName.toString()) {
-          if (sibl.tagName == "P") {
-            para = sibl
-          }
-          sibl = sibl.nextElementSibling
-        }
+        this.getSheet().innerHTML = "p.spoiler, p.spoiler > a { background-color: black; color: black; }\np.spoiler:hover { background-color: white; color: black; }"
         if (para) {
-          para.className += " spoiler"
 
-          para.onmouseover  = function() { spoilerpedia.detectWiki.changeLinkColor(para, document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "").getPropertyValue("color"), "white") }
-          para.onmouseout   = function() { spoilerpedia.detectWiki.changeLinkColor(para, "black", "black") }
+          var videosDiv = this.addVideos(moviePage)
 
-          videosDiv.style.width = (plotHeadline.parentNode.clientWidth - 0) + "px"
-
-          addSheet.innerHTML += "\ndiv.ytvids { float:left; width:" + videoWidth + "px }\ndiv > iframe { padding:10px }"
+          this.applySpoiler(para)
           
-          for ( var i = 0; i < videoFeed.feed.entry.length; i++)
-          {
-            var videoId = videoFeed.feed.entry[i].id["$t"].match(":video:(.*)")[1]
-            videosDiv.appendChild(spoilerpedia.youtube.generateYouTubeVideo( videoId, videoWidth - 20))
-            // <iframe width="560" height="315" src="https://www.youtube.com/embed/4G1xO_B2V7s" frameborder="0" allowfullscreen></iframe>
-          }
-
-          //videosDiv.appendChild(document.createElement("div"))
-          target.getElementById("mw-content-text").insertBefore(videosDiv, sibl) 
+          this.getSheet().innerHTML += "\ndiv.ytvids { float:left; }\ndiv#spoilerpedia-videos > iframe { padding:10px }"
+          target.getElementById("mw-content-text").insertBefore( videosDiv , para.nextElementSibling) 
         }
       } 
     }
   }
 }()
 spoilerpedia.detectWiki.init()
-
-// DONE! - need to add feature, if there is a "year" in the () of the title, then do a "movie year ending" lookup
-// also if the movie hasn't come out yet, don't apply the spoiler text / youtube thing.
