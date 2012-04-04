@@ -1,37 +1,44 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html>
   <head>
     <script>
       var toggleIcon = true, // true = on, false = off
           pageTitle = ""
-      function onRequest(request, sender, sendResponse) {
-        
-        if (request.showSpoilerpediaIcon) {
-          chrome.pageAction.show(sender.tab.id)
-        }
-
-        // Return nothing to let the connection be cleaned up.
-        sendResponse({})
-
-      }
+      
       function toggleSpoiler(tab) {
-        if (toggleIcon) { // the icon is "on" so we will set properties to turn it 'off'
+        var imageToUse, pageTitle, requestKey
+        if (tab.status == "complete" && toggleIcon) { 
+          // the icon is "on" (meaning Spoilerpedia is enabled)
+          // so we will set properties to turn it 'off'
+
           imageToUse = "logo-32-disabled.png"
           pageTitle = "Enable Spoilerpedia on this page"
+          requestKey = "removeSpoilerpedia"          
         }
         else {
           imageToUse = "logo-32.png"
           pageTitle = "Disable Spoilerpedia on this page"
+          requestKey = "restoreSpoilerpedia"          
+
         }
+
         chrome.pageAction.setIcon({ path: imageToUse, tabId: tab.id})
         chrome.pageAction.setTitle({ title: pageTitle, tabId: tab.id})
+        chrome.tabs.sendRequest(tab.id, JSON.parse("{\""+requestKey +"\": true}"), function response() { })
         toggleIcon = !toggleIcon
       }
-
-
+     
       // Listen for the content script to send a message to the background page.
-      chrome.extension.onRequest.addListener(onRequest)
+      
+      function onRequest(request, sender, sendResponse) {
+        if (request.showSpoilerpediaIcon) {
+          chrome.pageAction.show(sender.tab.id)
+          toggleIcon = true
+        }
+      }
+      chrome.extension.onRequest.addListener(onRequest)  
       chrome.pageAction.onClicked.addListener(toggleSpoiler)
+
     </script>
   </head>
 </html>

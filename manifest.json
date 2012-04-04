@@ -1,7 +1,7 @@
 {
   "name": "Spoilerpedia",
   "version": "0.1.0",
-  "description": "Spoilers the last paragraph of any movies on Wikipedia, then loads the 3 most relevant videos related to the ending of the movie",
+  "description": "Adds spoiler bars to the last paragraph of any film on Wikipedia, then loads the 3 most relevant videos on YouTube related to the ending of the film.",
   "icons": { 
     "16": "logo-16.png",
     "32": "logo-32.png",
@@ -11,6 +11,7 @@
   "background_page": "background.html",
   
   "permissions": [
+    "tabs",
     "http://en.wikipedia.org/*",
     "https://en.wikipedia.org/*"
   ],

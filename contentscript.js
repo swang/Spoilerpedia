@@ -172,6 +172,19 @@ spoilerpedia.detectWiki = function() {
       }
       return videosDiv
     },
+    removeSpoilerpedia: function() {
+      var para = this.getLastParagraph(plotHeadline)
+      para.className = para.className.replace(/\bspoiler\b/i,"").replace(/\s+$/,"") // remove spoiler class and trims end spaces
+      document.querySelector("div#spoilerpedia-videos").style.display = 'none'
+
+    },
+
+    restoreSpoilerpedia: function() {
+      var para = this.getLastParagraph(plotHeadline)
+      para.className += "spoiler"
+      document.querySelector("div#spoilerpedia-videos").style.display = ''
+
+    },
     init: function() {
       var plotHeadline = this.findHeadline('Plot')
 
@@ -199,3 +212,5 @@ spoilerpedia.detectWiki = function() {
   }
 }()
 spoilerpedia.detectWiki.init()
+
+ 
