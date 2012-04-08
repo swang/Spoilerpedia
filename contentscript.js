@@ -1,10 +1,27 @@
-if (!spoilerpedia) var spoilerpedia = {}
-
+if (typeof spoilerpedia === 'undefined') { var spoilerpedia = {} }
 
 spoilerpedia.youtube = function() {
-
   return {
+    /*
+     * function resize
+     * Resizes the spoilerpedia div based off the reflowed div on Wikipedia.
+     */
+    resize: function() {
+      var videosDiv = document.querySelector("div#spoilerpedia-videos"),
+          videosDivWidth = document.querySelector("div#spoilerpedia-videos").clientWidth
+          videos = videosDiv.querySelectorAll("iframe"),
+          videoWidth = Math.floor(videosDivWidth / 3) - 20
+      for ( var i = 0; i < videos.length; i++)
+      {
+        videos[i].setAttribute('width', videoWidth)
+        videos[i].setAttribute("height", Math.floor(videoWidth / (560/315.0) ))
+      }
+    },
 
+    /*
+     * function generateYouTubeVideo
+     * Generates an iframe element with the YouTube video with id, 'videoId' and a width of 'width'
+     */
     generateYouTubeVideo: function(videoId, width) {
 
       var vidIframe = document.createElement("iframe")
@@ -17,6 +34,10 @@ spoilerpedia.youtube = function() {
       return vidIframe
     },
 
+    /* 
+     * function getYouTubeFeed
+     * Returns the top 3 relevant links for 'query'
+     */
     getYouTubeFeed: function(query) {
       var xhr = new XMLHttpRequest(),
           resp
@@ -35,8 +56,7 @@ spoilerpedia.youtube = function() {
   }
 
 }()
-
-spoilerpedia.detectWiki = function() {
+spoilerpedia.wiki = function() {
   var target = arguments.length == 0 ? document : arguments[0]
 
   return {
@@ -107,14 +127,30 @@ spoilerpedia.detectWiki = function() {
 
     /*
      * function applySpoiler
-     * adds a blackbar across the last paragraph under Plot heading
+     * adds blackbars across the last paragraph under Plot heading
      */
     applySpoiler: function(paragraph) {
       if (paragraph) {
         var linkStyle = document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "")
         paragraph.className += " spoiler"
-        paragraph.onmouseover  = function() { spoilerpedia.detectWiki.changeLinkColor(paragraph, linkStyle.getPropertyValue("color"), linkStyle.getPropertyValue("background-color")) }
-        paragraph.onmouseout   = function() { spoilerpedia.detectWiki.changeLinkColor(paragraph, "black", "black") }
+        paragraph.onmouseover  = function() { spoilerpedia.wiki.changeLinkColor(paragraph, linkStyle.getPropertyValue("color"), linkStyle.getPropertyValue("background-color")) }
+        paragraph.onmouseout   = function() { spoilerpedia.wiki.changeLinkColor(paragraph, "black", "black") }
+        spoilerpedia.wiki.changeLinkColor(paragraph, "black", "black")
+      }
+    },
+    /*
+     * function removeSpoiler
+     * removes blackbars from last paragraph and removes mouseover/out events
+     */
+    removeSpoiler: function(paragraph) {
+      if (paragraph) {
+        var linkStyle = document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "")
+        // remove spoiler class and trims end spaces
+        paragraph.className = paragraph.className.replace(/\bspoiler\b/gi,"").replace(/\s\s*$/,"").replace(/^\s\s*/,"") 
+        // remove mouseover/out events
+        paragraph.onmouseover = null
+        paragraph.onmouseout = null
+        spoilerpedia.wiki.changeLinkColor(paragraph,  linkStyle.getPropertyValue("color"), linkStyle.getPropertyValue("background-color"))
       }
     },
 
@@ -154,7 +190,7 @@ spoilerpedia.detectWiki = function() {
      */
     addVideos: function(moviePage) {
       var videosDiv = document.createElement("div"),
-          videoDivWidth = this.findHeadline('Plot').parentNode.clientWidth,
+          videoDivWidth = this.findHeadline('Plot').parentNode.parentNode.clientWidth,
           movieName = moviePage.replace(/\s+\(.*\)/,''), // returns title of page w/out disambig 
           movieYearInPageName = moviePage.match(/\(([0-9]{4}) .*\)/i), // grabs the year if it exists in disambig
           
@@ -163,7 +199,11 @@ spoilerpedia.detectWiki = function() {
           
       videosDiv.id = "spoilerpedia-videos"
       
-      videosDiv.style.width =  videoDivWidth + "px"
+      videosDiv.style.width = "auto"
+      videosDiv.style.height = "auto"
+
+      videosDiv.style.overflow = "hidden"
+
       for ( var i = 0; i < videoFeed.entry.length; i++)
       {
         var videoId = videoFeed.entry[i].id["$t"].match(":video:(.*)")[1]
@@ -173,17 +213,17 @@ spoilerpedia.detectWiki = function() {
       return videosDiv
     },
     removeSpoilerpedia: function() {
-      var para = this.getLastParagraph(plotHeadline)
-      para.className = para.className.replace(/\bspoiler\b/i,"").replace(/\s+$/,"") // remove spoiler class and trims end spaces
+      var plotHeadline = this.findHeadline('Plot'),
+          para = this.getLastParagraph(plotHeadline)
+      this.removeSpoiler(para)
       document.querySelector("div#spoilerpedia-videos").style.display = 'none'
-
     },
 
     restoreSpoilerpedia: function() {
-      var para = this.getLastParagraph(plotHeadline)
-      para.className += "spoiler"
-      document.querySelector("div#spoilerpedia-videos").style.display = ''
-
+      var plotHeadline = this.findHeadline('Plot'),
+          para = this.getLastParagraph(plotHeadline)
+      this.applySpoiler(para)
+      document.querySelector("div#spoilerpedia-videos").style.display = 'block'
     },
     init: function() {
       var plotHeadline = this.findHeadline('Plot')
@@ -197,20 +237,36 @@ spoilerpedia.detectWiki = function() {
         
         target.body.appendChild( this.getSheet() )
 
-        this.getSheet().innerHTML = "p.spoiler, p.spoiler > a { background-color: black; color: black; }\np.spoiler:hover { background-color: white; color: black; }"
+        this.getSheet().innerHTML = "p.spoiler, p.spoiler > a { background-color: black; color: black; }\np.spoiler:hover { background-color: white; color: black; }\ndiv#spoilerpedia-videos > iframe { padding:10px }\n"
         if (para) {
 
           var videosDiv = this.addVideos(moviePage)
-
           this.applySpoiler(para)
-          
-          this.getSheet().innerHTML += "\ndiv.ytvids { float:left; }\ndiv#spoilerpedia-videos > iframe { padding:10px }"
-          target.getElementById("mw-content-text").insertBefore( videosDiv , para.nextElementSibling) 
+          target.getElementById("mw-content-text").insertBefore(videosDiv , para.nextElementSibling) 
         }
+        setTimeout( spoilerpedia.youtube.resize, 1000)
       } 
     }
   }
 }()
-spoilerpedia.detectWiki.init()
 
- 
+spoilerpedia.wiki.init()
+
+chrome.extension.onRequest.addListener( function onRequest(request, sender, sendResponse) {
+  if (request.showSpoilerpediaIcon) {
+    chrome.pageAction.show(sender.tab.id)
+  }
+  if (request.restoreSpoilerpedia) {
+    spoilerpedia.wiki.restoreSpoilerpedia()
+  }
+  if (request.removeSpoilerpedia) {
+    spoilerpedia.wiki.removeSpoilerpedia()
+  }
+  // Return nothing to let the connection be cleaned up.
+  sendResponse({})
+})  
+
+window.onresize = function(event) {
+  spoilerpedia.youtube.resize()
+}
+
