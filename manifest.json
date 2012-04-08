@@ -1,6 +1,6 @@
 {
   "name": "Spoilerpedia",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Adds spoiler bars to the last paragraph of any film on Wikipedia, then loads the 3 most relevant videos on YouTube related to the ending of the film.",
   "icons": { 
     "16": "logo-16.png",
