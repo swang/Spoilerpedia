@@ -7,8 +7,9 @@ spoilerpedia.youtube = function() {
      * Resizes the spoilerpedia div based off the reflowed div on Wikipedia.
      */
     resize: function() {
+      if (! document.querySelector("div#spoilerpedia-videos")) { return }
       var videosDiv = document.querySelector("div#spoilerpedia-videos"),
-          videosDivWidth = document.querySelector("div#spoilerpedia-videos").clientWidth
+          videosDivWidth = videosDiv.clientWidth
           videos = videosDiv.querySelectorAll("iframe"),
           videoWidth = Math.floor(videosDivWidth / 3) - 20
 
@@ -277,5 +278,7 @@ chrome.extension.onRequest.addListener( function onRequest(request, sender, send
 })  
 
 window.onresize = function(event) {
-  spoilerpedia.youtube.resize()
+  if (spoilerpedia.wiki.wikiPageIsAFilm()) {
+    spoilerpedia.youtube.resize()
+  }
 }
