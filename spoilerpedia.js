@@ -135,7 +135,7 @@ spoilerpedia.wiki = function() {
       if (paragraph) {
         var linkStyle = document.defaultView.getComputedStyle( document.getElementsByTagName("a")[0], "")
         
-          paragraph.className += " spoiler"
+        paragraph.className += " spoiler"
         paragraph.onmouseover  = function() { spoilerpedia.wiki.changeLinkColor(paragraph, linkStyle.getPropertyValue("color"), linkStyle.getPropertyValue("background-color")) }
         paragraph.onmouseout   = function() { spoilerpedia.wiki.changeLinkColor(paragraph, "black", "black") }
         
@@ -143,6 +143,7 @@ spoilerpedia.wiki = function() {
         spoilerpedia.wiki.changeLinkColor(paragraph, "black", "black")
       }
     },
+
     /*
      * function removeSpoiler
      * removes blackbars from last paragraph and removes mouseover/out events
