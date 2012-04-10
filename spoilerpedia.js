@@ -240,6 +240,8 @@ spoilerpedia.wiki = function() {
 
       if ( this.wikiPageIsAFilm() && plotHeadline != null) {
         chrome.extension.sendRequest({"showSpoilerpediaIcon":true}, function response() {})
+
+        chrome.extension.sendRequest({"tracker":true}, function resp() {})
         var moviePage = this.getTitle(),
             para = this.getLastParagraph(plotHeadline)
         
@@ -277,4 +279,3 @@ chrome.extension.onRequest.addListener( function onRequest(request, sender, send
 window.onresize = function(event) {
   spoilerpedia.youtube.resize()
 }
-

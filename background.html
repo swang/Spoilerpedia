@@ -4,7 +4,19 @@
     <script>
       var toggleIcon = true, // true = on, false = off
           pageTitle = ""
-      
+
+      var goog = function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = 'https://ssl.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      }()
+
+      var GA_ID = 'UA-30697465-1',
+          _gaq = _gaq || []
+
+      _gaq.push(['_setAccount', GA_ID]);
+      _gaq.push(['_trackPageview']);
+      //window.alert("OK")
       function toggleSpoiler(tab) {
         var imageToUse, pageTitle, requestKey
         if (tab.status == "complete" && toggleIcon) { 
@@ -13,13 +25,14 @@
 
           imageToUse = "logo-32-disabled.png"
           pageTitle = "Enable Spoilerpedia on this page"
-          requestKey = "removeSpoilerpedia"          
+          requestKey = "removeSpoilerpedia"
+          _gaq.push(['_trackEvent', 'pageActionButton', 'clicked', 'disabled for ' + tab.url ]);
         }
         else {
           imageToUse = "logo-32.png"
           pageTitle = "Disable Spoilerpedia on this page"
           requestKey = "restoreSpoilerpedia"          
-
+          _gaq.push(['_trackEvent', 'pageActionButton', 'clicked', 'enabled for ' + tab.url ]);
         }
 
         chrome.pageAction.setIcon({ path: imageToUse, tabId: tab.id})
@@ -34,6 +47,10 @@
         if (request.showSpoilerpediaIcon) {
           chrome.pageAction.show(sender.tab.id)
           toggleIcon = true
+        }
+        if (request.tracker) {
+          _gaq.push(['_setAccount', GA_ID]);
+          _gaq.push(['_trackEvent','wikipedia','loaded', sender.tab.url]);
         }
       })  
       chrome.pageAction.onClicked.addListener(toggleSpoiler)
