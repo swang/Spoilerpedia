@@ -1,3 +1,4 @@
+** Note this Chrome Extension is no longer maintained **
 Spoilerpedia
 ===============
 
